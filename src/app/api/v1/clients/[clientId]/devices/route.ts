@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  { params }: { params: { clientId: string } }
+  params: Promise<{ client_id: string }>
 ) {
+  const { client_id: clientId } = await params;
   const supabase = await createClient();
-  const clientIdFromUrl = params.clientId;
+  const clientIdFromUrl = clientId;
 
   // Verificación de seguridad
   if (!clientIdFromUrl) {
