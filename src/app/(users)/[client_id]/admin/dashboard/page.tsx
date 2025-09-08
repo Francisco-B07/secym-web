@@ -13,7 +13,7 @@ type PageProps = {
 };
 
 export default async function ClientAdminDashboardPage({ params }: PageProps) {
-  const { client_id } = params;
+  const { client_id } = await params;
   const supabase = await createClient();
 
   // 2. SEGURIDAD: Validamos la sesión y los permisos del usuario en el servidor
