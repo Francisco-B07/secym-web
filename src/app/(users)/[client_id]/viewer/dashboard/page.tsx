@@ -3,15 +3,16 @@ import { fetchClientDetails, fetchDevicesForClient } from "@/lib/data";
 import Link from "next/link";
 import StatusIndicator from "@/components/shared/StatusIndicator";
 
-export default async function ClientDashboard({
-  params,
-}: {
-  params: { client_id: string };
-}) {
+interface Props {
+  params: Promise<{ client_id: string }>;
+}
+
+export default async function ClientDashboard({ params }: Props) {
+  const { client_id } = await params;
   const supabase = await createClient();
   const [client, devices] = await Promise.all([
-    fetchClientDetails(supabase, params.client_id),
-    fetchDevicesForClient(supabase, params.client_id),
+    fetchClientDetails(supabase, client_id),
+    fetchDevicesForClient(supabase, client_id),
   ]);
 
   return (
