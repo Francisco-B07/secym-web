@@ -8,15 +8,16 @@ export default async function DeviceDetailPage({
   searchParams,
 }: {
   params: Promise<{ device_id: string }>;
-  searchParams: { from?: string; to?: string };
+  searchParams: Promise<{ searchParamFrom?: string; searchParamTo?: string }>;
 }) {
   const { device_id } = await params;
+  const { searchParamFrom, searchParamTo } = await searchParams;
   const supabase = await createClient();
   const device = await fetchDeviceDetails(supabase, device_id);
 
   // Lógica para el selector de fechas
-  const to = searchParams.to ? new Date(searchParams.to) : new Date();
-  const from = searchParams.from ? new Date(searchParams.from) : subDays(to, 1);
+  const to = searchParamTo ? new Date(searchParamTo) : new Date();
+  const from = searchParamFrom ? new Date(searchParamFrom) : subDays(to, 1);
 
   const readings = await fetchSensorReadings(
     supabase,
