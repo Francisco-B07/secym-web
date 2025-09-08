@@ -8,11 +8,11 @@ import ClientDashboardContent from "@/components/dashboard/client-admin/ClientDa
 import { redirect } from "next/navigation";
 import { type User, type DeviceWithStatus } from "@/lib/types";
 
-type PageProps = {
-  params: { client_id: string };
-};
+interface Props {
+  params: Promise<{ client_id: string }>;
+}
 
-export default async function ClientAdminDashboardPage({ params }: PageProps) {
+export default async function ClientAdminDashboardPage({ params }: Props) {
   const { client_id } = await params;
   const supabase = await createClient();
 
@@ -57,7 +57,7 @@ export default async function ClientAdminDashboardPage({ params }: PageProps) {
 
   return (
     <ClientDashboardContent
-      clientId={params.client_id}
+      clientId={client_id}
       clientName={client.name ?? ""}
       initialDevices={initialDevices as DeviceWithStatus[]}
       initialUsers={initialUsers as User[]}
