@@ -5,14 +5,11 @@ import { fetchDevicesWithLatestReadingsForClient } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-// Definimos el tipo de los params
-type RouteContext = {
-  params: { clientId: string };
-};
-
-export async function GET(request: NextRequest, context: RouteContext) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { clientId: string } }
+) {
   const supabase = await createClient();
-  const { params } = context;
   const clientIdFromUrl = params.clientId;
 
   // Verificación de seguridad
