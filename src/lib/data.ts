@@ -152,3 +152,56 @@ export async function fetchUsersForClient(
   if (error) throw error;
   return data;
 }
+
+// Obtiene las lecturas de sensores para un dispositivo en un rango de tiempo
+export async function fetchReadingsForDevice(
+  supabase: SupabaseClient,
+  deviceId: string,
+  from: string,
+  to: string
+) {
+  const { data, error } = await supabase
+    .from("sensor_readings")
+    .select(
+      `
+            timestamp, 
+            ambient_temp, 
+            ambient_hum, 
+            current_a, 
+            current_b, 
+            probe_temperatures
+        `
+    )
+    .eq("device_id", deviceId)
+    .gte("timestamp", from)
+    .lte("timestamp", to)
+    .order("timestamp", { ascending: true });
+
+  if (error) throw error;
+  return data;
+}
+
+// Llama a nuestra nueva función RPC para el consumo de corriente
+export async function fetchHourlyCurrentAverage(
+  supabase: SupabaseClient,
+  deviceId: string,
+  from: string,
+  to: string
+) {
+  const { data, error } = await supabase.rpc("get_hourly_current_average", {
+    p_device_id: deviceId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Obtiene el historial de alertas
+export async function fetchAlertsForDevice(
+  supabase: SupabaseClient,
+  deviceId: string
+) {
+  // (Lógica para obtener alertas, por ahora devolvemos un array vacío)
+  return [];
+}

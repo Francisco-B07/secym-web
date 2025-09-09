@@ -59,3 +59,27 @@ export type User = {
   clientId: string | null;
   clientName: string;
 };
+
+export interface ChartDataPoint {
+  x: number; // Timestamp en milisegundos
+  y: number | null;
+}
+
+export interface ChartSeries {
+  name: string;
+  data: ChartDataPoint[];
+}
+
+export interface ChartProps {
+  seriesData: ChartSeries[];
+}
+
+export interface Alert {
+  id: number;
+  device_id: string;
+  client_id: string;
+  alert_type: "TEMP_CRITICAL" | "CURRENT_HIGH" | "OFFLINE";
+  details: string | null;
+  timestamp: string; // ISO 8601 string
+  status: "new" | "acknowledged" | "resolved";
+}
