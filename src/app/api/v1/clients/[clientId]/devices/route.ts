@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { fetchDevicesWithLatestReadingsForClient } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  request: Request,
-  context: { params: { clientId: string } }
-) {
+// Definimos el tipo de los params
+type Params = {
+  params: { clientId: string };
+};
+
+export async function GET(request: NextRequest, { params }: Params) {
   const supabase = await createClient();
-  const clientIdFromUrl = context.params.clientId;
+  const clientIdFromUrl = params.clientId;
 
   // Verificación de seguridad
   if (!clientIdFromUrl) {
