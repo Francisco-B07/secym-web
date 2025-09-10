@@ -1,10 +1,27 @@
 /**
  * Representa la estructura de la tabla 'clients' en la base de datos.
  */
+
 export interface Client {
   id: string;
   name: string;
   created_at: string;
+}
+
+export interface ProbeConfig {
+  id: string;
+  name: string;
+  alerts_enabled: boolean;
+}
+
+export interface CurrentSensorConfig {
+  id: string;
+  name: string;
+}
+
+export interface SensorConfig {
+  probes?: ProbeConfig[];
+  currents?: CurrentSensorConfig[];
 }
 
 export interface Device {
@@ -13,6 +30,10 @@ export interface Device {
   client_id: string;
   location: string;
   created_at: string;
+  sensor_config: SensorConfig | null;
+  device_type?: "refrigerator" | "hvac";
+  min_temp_threshold?: number | null;
+  max_temp_threshold?: number | null;
 }
 
 export interface SensorReading {
@@ -21,7 +42,7 @@ export interface SensorReading {
   ambient_hum: number | null;
   current_a: number | null;
   current_b: number | null;
-  probe_temperatures: Record<string, number> | null; // Para el JSONB
+  probe_temperatures: number[] | null;
 }
 
 // Tipos combinados para las vistas del dashboard
@@ -72,6 +93,7 @@ export interface ChartSeries {
 
 export interface ChartProps {
   seriesData: ChartSeries[];
+  isLoading?: boolean;
 }
 
 export interface Alert {
@@ -82,4 +104,13 @@ export interface Alert {
   details: string | null;
   timestamp: string; // ISO 8601 string
   status: "new" | "acknowledged" | "resolved";
+}
+
+export interface Kpis {
+  total_clients: number;
+  total_devices: number;
+  ok_devices: number;
+  warning_devices: number;
+  critical_devices: number;
+  offline_devices: number;
 }

@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useMemo } from "react";
-import Chart from "react-apexcharts";
+import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import { type ChartSeries } from "@/lib/types";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface TemperatureChartProps {
   seriesData: ChartSeries[];
   minThreshold: number;
   maxThreshold: number;
   isLoading?: boolean;
+  type?: "line" | "scatter";
 }
 
 // Un componente de esqueleto de carga para el gráfico
@@ -26,12 +29,17 @@ export default function TemperatureChart({
   minThreshold,
   maxThreshold,
   isLoading = false,
+  type = "scatter",
 }: TemperatureChartProps) {
   // 1. PROCESAMIENTO DE DATOS PARA RESALTAR ANOMALÍAS
   // Esta es la lógica clave. Creamos nuevas series que solo contienen los puntos
   // que están fuera de los umbrales para poder darles un estilo diferente.
   const processedSeries = useMemo(() => {
     const finalSeries: ChartSeries[] = [];
+
+    if (!seriesData || seriesData.every((s) => s.data.length === 0)) {
+      return [];
+    }
 
     seriesData.forEach((series) => {
       const normalPoints: { x: number; y: number | null }[] = [];
@@ -43,26 +51,20 @@ export default function TemperatureChart({
           (point.y < minThreshold || point.y > maxThreshold)
         ) {
           anomalyPoints.push(point);
+          // ...añadimos un `null` a la serie normal para crear un hueco en la línea.
+          normalPoints.push({ x: point.x, y: null });
         } else {
-          // Para mantener la continuidad de la línea, añadimos un punto nulo donde hay una anomalía
-          if (
-            normalPoints.length > 0 &&
-            normalPoints[normalPoints.length - 1].y !== null
-          ) {
-            normalPoints.push({ x: point.x, y: point.y });
-          } else if (point.y !== null) {
-            normalPoints.push(point);
-          }
+          normalPoints.push(point);
         }
       });
 
-      // Añadimos la serie con los puntos normales
+      // La serie normal ahora contiene los huecos
       finalSeries.push({
-        name: series.name,
+        ...series,
         data: normalPoints,
       });
 
-      // Añadimos una serie separada solo para las anomalías, que renderizaremos como puntos rojos
+      // La serie de anomalías solo contiene los puntos rojos
       if (anomalyPoints.length > 0) {
         finalSeries.push({
           name: `${series.name} (Anomalía)`,
@@ -70,46 +72,46 @@ export default function TemperatureChart({
         });
       }
     });
-
     return finalSeries;
   }, [seriesData, minThreshold, maxThreshold]);
+
+  const chartColors = useMemo(() => {
+    const basePalette = ["#008FFB", "#00E396", "#FEB019", "#775DD0", "#A300D6"];
+    let colorIndex = 0;
+    return processedSeries.map((series) => {
+      if (series.name.includes("(Anomalía)")) return "#FF4560";
+      const color = basePalette[colorIndex % basePalette.length];
+      colorIndex++;
+      return color;
+    });
+  }, [processedSeries]);
 
   // 2. CONFIGURACIÓN AVANZADA DE APEXCHARTS
   const options: ApexOptions = {
     chart: {
       type: "line",
       height: 400,
-      zoom: {
-        type: "x",
-        enabled: true,
-        autoScaleYaxis: true,
-      },
-      toolbar: {
-        autoSelected: "zoom",
-        tools: {
-          download: true,
-          selection: true,
-          zoom: true,
-          zoomin: true,
-          zoomout: true,
-          pan: true,
-          reset: true,
-        },
-      },
+      zoom: { enabled: true, type: "x", autoScaleYaxis: true },
+      toolbar: { autoSelected: "zoom" },
+      animations: { enabled: true, speed: 500 },
     },
     // Asignamos colores y estilos distintos a las series normales y a las de anomalías
-    colors: ["#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0", "#FF4560"], // Colores para las sondas + rojo para anomalías
-    dataLabels: {
-      enabled: false,
-    },
+    colors: chartColors,
+    dataLabels: { enabled: false },
     stroke: {
       curve: "smooth",
-      width: [3, 3, 3, 3, 3, 0], // Hacemos que la línea de la anomalía sea invisible (ancho 0)
+      width: processedSeries.map((s) =>
+        s.name.includes("(Anomalía)") ? 0 : type === "line" ? 3 : 0
+      ),
     },
     // Configuramos los puntos (markers)
     markers: {
-      size: [0, 0, 0, 0, 0, 6], // Hacemos los puntos de la anomalía más grandes (tamaño 6)
-      hover: { sizeOffset: 4 },
+      // Si es anomalía, tamaño 6. Si es normal y tipo 'scatter', tamaño 5. Si es normal y tipo 'line', tamaño 0.
+      size: processedSeries.map((s) =>
+        s.name.includes("(Anomalía)") ? 6 : type === "scatter" ? 5 : 0
+      ),
+      strokeWidth: 0,
+      hover: { size: 7 },
     },
     // ANOTACIONES PARA LAS BANDAS DE UMBRAL (ZONA SEGURA)
     annotations: {
@@ -147,24 +149,15 @@ export default function TemperatureChart({
     // El tooltip compartido es clave para comparar valores en un punto en el tiempo
     tooltip: {
       shared: true,
+      intersect: false, // Asegura que el tooltip aparezca aunque haya huecos (nulls)
       x: { format: "dd MMM yyyy, HH:mm" },
     },
     legend: {
-      // Ocultamos las leyendas de las series de anomalías
       formatter: (seriesName) =>
         seriesName.includes("(Anomalía)") ? "" : seriesName,
+      position: "top",
     },
-    // Mensaje a mostrar si no hay datos
-    noData: {
-      text: "No hay datos disponibles para el rango de tiempo seleccionado.",
-      align: "center",
-      verticalAlign: "middle",
-      offsetY: -20,
-      style: {
-        fontSize: "16px",
-        color: "#666",
-      },
-    },
+    noData: { text: "No hay datos de temperatura para el rango seleccionado." },
   };
 
   if (isLoading) {
@@ -174,6 +167,7 @@ export default function TemperatureChart({
   return (
     <div id="temperature-chart" className="w-full">
       <Chart
+        key={type}
         options={options}
         series={processedSeries}
         type="line"

@@ -64,7 +64,7 @@ export default function TimeRangeFilter() {
         <button
           key={preset.hours}
           onClick={() => handlePresetClick(preset.hours)}
-          className="px-3 py-1 text-sm font-medium text-gray-700 bg-white rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="px-3 py-1 text-sm font-medium text-gray-700 bg-white rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500"
         >
           {preset.label}
         </button>
@@ -74,7 +74,7 @@ export default function TimeRangeFilter() {
       <div className="relative">
         <button
           onClick={() => setIsPickerOpen(!isPickerOpen)}
-          className="px-3 py-1 text-sm font-medium text-gray-700 bg-white rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center"
+          className="px-3 py-1 text-sm font-medium text-gray-700 bg-white rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 flex items-center"
         >
           <CalendarIcon className="h-4 w-4 mr-2" />
           Personalizado
@@ -105,7 +105,7 @@ export default function TimeRangeFilter() {
             <button
               onClick={handleCustomApply}
               disabled={!startDate || !endDate}
-              className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 disabled:opacity-50"
             >
               Aplicar Rango
             </button>

@@ -1,82 +1,179 @@
 "use client";
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceArea,
-} from "recharts";
-import { format } from "date-fns";
+import React, { useMemo } from "react";
+import dynamic from "next/dynamic";
+import { ApexOptions } from "apexcharts";
+import { type ChartSeries } from "@/lib/types";
 
-interface ChartData {
-  timestamp: string;
-  probe_1: number | null;
-}
+// Cargamos ApexCharts de forma dinámica
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface TemperatureChartProps {
-  data: ChartData[];
+  seriesData: ChartSeries[];
   minThreshold: number;
   maxThreshold: number;
+  isLoading?: boolean;
+  type?: "line" | "scatter";
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="h-96 w-full bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
+      <p className="text-gray-500">Cargando datos del gráfico...</p>
+    </div>
+  );
 }
 
 export default function TemperatureChart({
-  data,
+  seriesData,
   minThreshold,
   maxThreshold,
+  isLoading = false,
+  type = "line",
 }: TemperatureChartProps) {
-  const formattedData = data.map((d) => ({
-    ...d,
-    // Formateamos la fecha para que se vea bien en el eje X
-    time: format(new Date(d.timestamp), "HH:mm"),
-  }));
+  // 1. PROCESAMIENTO DE DATOS PARA RESALTAR ANOMALÍAS
+  // `useMemo` optimiza el rendimiento, recalculando solo si los datos cambian.
+  const processedSeries = useMemo(() => {
+    const finalSeries: (ChartSeries & { type?: string })[] = [];
 
+    // Si no hay datos, no procesamos nada.
+    if (!seriesData || seriesData.every((s) => s.data.length === 0)) {
+      return [];
+    }
+
+    seriesData.forEach((series) => {
+      const normalPoints: { x: number; y: number | null }[] = [];
+      const anomalyPoints: { x: number; y: number | null }[] = [];
+
+      series.data.forEach((point) => {
+        if (
+          point.y !== null &&
+          (point.y < minThreshold || point.y > maxThreshold)
+        ) {
+          anomalyPoints.push(point);
+        } else {
+          normalPoints.push(point);
+        }
+      });
+
+      // Añadimos la serie con los puntos normales
+      finalSeries.push({
+        ...series,
+        type: type === "line" ? "line" : "scatter",
+        data: normalPoints,
+      });
+
+      // Añadimos una serie separada solo para las anomalías
+      if (anomalyPoints.length > 0) {
+        finalSeries.push({
+          name: `${series.name} (Anomalía)`,
+          type: "scatter", // Las anomalías siempre son puntos
+          data: anomalyPoints,
+        });
+      }
+    });
+
+    return finalSeries;
+  }, [seriesData, minThreshold, maxThreshold, type]);
+
+  const chartColors = useMemo(() => {
+    const basePalette = ["#008FFB", "#00E396", "#FEB019", "#775DD0", "#A300D6"];
+    let colorIndex = 0;
+    return processedSeries.map((series) => {
+      if (series.name.includes("(Anomalía)")) {
+        return "#FF4560"; // Rojo para todas las anomalías
+      }
+      // Asignamos colores de la paleta a las series normales
+      const color = basePalette[colorIndex % basePalette.length];
+      colorIndex++;
+      return color;
+    });
+  }, [processedSeries]);
+
+  // 2. CONFIGURACIÓN AVANZADA DE APEXCHARTS
+  const options: ApexOptions = {
+    chart: {
+      type: "line",
+      height: 400,
+      zoom: { enabled: true, type: "x", autoScaleYaxis: true },
+      toolbar: { autoSelected: "zoom" },
+      animations: { enabled: true, speed: 500 },
+    },
+    colors: chartColors,
+    dataLabels: { enabled: false },
+    stroke: {
+      curve: "smooth",
+      // El ancho de la línea depende del tipo de gráfico seleccionado
+      width: processedSeries.map((s) =>
+        s.name.includes("(Anomalía)") ? 0 : type === "line" ? 3 : 0
+      ),
+    },
+    markers: {
+      // Los puntos son visibles en scatter, o grandes para las anomalías
+      size: processedSeries.map((s) =>
+        s.name.includes("(Anomalía)") ? 6 : type === "scatter" ? 5 : 0
+      ),
+      strokeWidth: 0,
+      hover: { size: 7 },
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: minThreshold,
+          y2: maxThreshold,
+          borderColor: "#00E396",
+          fillColor: "#00E396",
+          opacity: 0.1,
+          label: {
+            borderColor: "#000000",
+            style: { color: "#fff", background: "#00E396" },
+            text: "Zona Segura",
+            position: "left",
+            offsetX: 10,
+          },
+        },
+      ],
+    },
+    xaxis: {
+      type: "datetime",
+      labels: { datetimeUTC: false, format: "dd MMM HH:mm" },
+      title: { text: "Hora" },
+    },
+    yaxis: {
+      labels: { formatter: (val) => `${val?.toFixed(1)} °C` },
+      title: { text: "Temperatura (°C)" },
+      tooltip: { enabled: true },
+    },
+    tooltip: {
+      shared: true,
+      x: { format: "dd MMM yyyy, HH:mm" },
+    },
+    legend: {
+      formatter: (seriesName) =>
+        seriesName.includes("(Anomalía)") ? "" : seriesName,
+      position: "top",
+    },
+    noData: {
+      text: "No hay datos de temperatura para el rango seleccionado.",
+      style: { fontSize: "16px", color: "#666" },
+    },
+  };
+
+  if (isLoading) {
+    return <ChartSkeleton />;
+  }
+
+  // Usamos un `key` en el componente Chart para forzar su re-renderizado
+  // cuando el tipo de gráfico cambia, asegurando que los estilos se apliquen correctamente.
   return (
-    <div className="h-96 w-full">
-      <ResponsiveContainer>
-        <LineChart
-          data={formattedData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis domain={["dataMin - 2", "dataMax + 2"]} />
-          <Tooltip />
-          <Legend />
-
-          {/* LA MAGIA: ZONA SEGURA CON BANDAS DE UMBRAL */}
-          <ReferenceArea
-            y1={minThreshold}
-            y2={maxThreshold}
-            strokeOpacity={0.3}
-            fill="green"
-            fillOpacity={0.1}
-            label={{ value: "Zona Segura", position: "insideTopLeft" }}
-          />
-
-          <Line
-            type="monotone"
-            dataKey="probe_1"
-            name="Temperatura Sonda 1 (°C)"
-            stroke="#8884d8"
-            dot={(props) => {
-              const { cx, cy, payload } = props;
-              // Si el punto está fuera de la zona segura, lo pintamos de rojo
-              if (
-                payload.probe_1 < minThreshold ||
-                payload.probe_1 > maxThreshold
-              ) {
-                return <circle cx={cx} cy={cy} r={5} fill="red" />;
-              }
-              return <circle cx={cx} cy={cy} r={3} fill="#8884d8" />;
-            }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div id="temperature-chart" className="w-full">
+      <Chart
+        key={type}
+        options={options}
+        series={processedSeries}
+        type="line"
+        height={400}
+      />
     </div>
   );
 }

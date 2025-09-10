@@ -2,20 +2,18 @@
 import { DeviceWithStatus } from "@/lib/types";
 import {
   ArrowTopRightOnSquareIcon,
-  ClockIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import StatusIndicator from "@/components/shared/StatusIndicator";
 import ProbeTemperatures from "@/components/dashboard/shared/ProbeTemperatures";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import {
   DeviceFormState,
   updateDeviceLocationAction,
 } from "@/actions/deviceActions";
 import { useState, useEffect } from "react";
 import { useActionState } from "react";
+import TimeAgo from "@/components/shared/TimeAgo";
 
 const initialState: DeviceFormState = { message: "", type: "success" };
 
@@ -48,12 +46,6 @@ export default function DeviceCard({
   const totalCurrent =
     (device.latest_reading?.current_a ?? 0) +
     (device.latest_reading?.current_b ?? 0);
-  const lastUpdate = device.latest_reading?.timestamp
-    ? formatDistanceToNow(new Date(device.latest_reading.timestamp), {
-        addSuffix: true,
-        locale: es,
-      })
-    : "N/A";
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 flex flex-col justify-between transition-all duration-300">
@@ -136,10 +128,7 @@ export default function DeviceCard({
       </div>
 
       <div className="mt-4 border-t border-gray-200 pt-3 flex justify-between items-center text-xs text-gray-500">
-        <div className="flex items-center">
-          <ClockIcon className="h-4 w-4 mr-1" />
-          <span>Actualizado: {lastUpdate}</span>
-        </div>
+        <TimeAgo timestamp={device.latest_reading?.timestamp} />
         <Link
           href={`/devices/${device.id}`}
           className="inline-flex items-center font-semibold text-cyan-600 hover:text-cyan-800"

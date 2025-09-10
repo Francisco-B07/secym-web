@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "/public/logo-2a.jpg";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 export default async function UsersLayout({
   children,
@@ -33,7 +34,8 @@ export default async function UsersLayout({
               </Link>
             </div>
             <div className="flex items-center">
-              <span className="text-gray-700 mr-4">Hola, {user?.email}</span>
+              <span className="text-gray-700 mr-4">Hola {user?.email}</span>
+              <NotificationBell userId={user!.id} />
               <LogoutButton />
             </div>
           </div>

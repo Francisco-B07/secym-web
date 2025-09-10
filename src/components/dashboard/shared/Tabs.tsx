@@ -4,10 +4,18 @@ import { useState } from "react";
 
 interface TabsProps {
   tabs: { name: string; content: React.ReactNode }[];
+  onTabChange?: (index: number) => void; // <-- Prop opcional
 }
 
-export default function Tabs({ tabs }: TabsProps) {
+export default function Tabs({ tabs, onTabChange }: TabsProps) {
   const [activeTab, setActiveTab] = useState(0);
+
+  const handleTabClick = (index: number) => {
+    setActiveTab(index);
+    if (onTabChange) {
+      onTabChange(index); // Notifica al componente padre del cambio
+    }
+  };
 
   return (
     <div>
@@ -16,7 +24,7 @@ export default function Tabs({ tabs }: TabsProps) {
           {tabs.map((tab, index) => (
             <button
               key={tab.name}
-              onClick={() => setActiveTab(index)}
+              onClick={() => handleTabClick(index)}
               className={`${
                 index === activeTab
                   ? "border-cyan-500 text-cyan-600"

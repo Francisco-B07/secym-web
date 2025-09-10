@@ -1,6 +1,11 @@
 "use server";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { type ClientWithStatus, type DeviceWithStatus } from "./types";
+import {
+  Alert,
+  Kpis,
+  type ClientWithStatus,
+  type DeviceWithStatus,
+} from "./types";
 
 // --- PARA LA VISTA DEL SUPER ADMIN ---
 export async function fetchClientsWithStatus(
@@ -204,4 +209,48 @@ export async function fetchAlertsForDevice(
 ) {
   // (Lógica para obtener alertas, por ahora devolvemos un array vacío)
   return [];
+}
+
+// --- FUNCIÓN PARA OBTENER LOS KPIS DEL SUPER ADMIN ---
+export async function fetchSuperAdminKpis(
+  supabase: SupabaseClient
+): Promise<Kpis> {
+  // Llama a la función RPC que creamos, la cual hace todo el cálculo pesado en la DB.
+  const { data, error } = await supabase.rpc("get_super_admin_kpis");
+
+  if (error) {
+    console.error("Error fetching Super Admin KPIs:", error);
+    throw new Error("No se pudieron cargar los indicadores clave.");
+  }
+
+  // La RPC devuelve un único objeto JSON que coincide con nuestra interfaz Kpis.
+  return data;
+}
+
+// --- FUNCIÓN PARA OBTENER LAS ALERTAS MÁS RECIENTES ---
+export async function fetchRecentAlerts(
+  supabase: SupabaseClient
+): Promise<Alert[]> {
+  const { data, error } = await supabase
+    .from("alerts")
+    // Pedimos todos los campos de la alerta y, usando joins,
+    // traemos el nombre del cliente y la ubicación del dispositivo.
+    .select(
+      `
+      *,
+      clients ( name ),
+      devices ( location )
+    `
+    )
+    // Ordenamos por la más reciente primero.
+    .order("timestamp", { ascending: false })
+    // Limitamos el resultado a las últimas 5 alertas.
+    .limit(5);
+
+  if (error) {
+    console.error("Error fetching recent alerts:", error);
+    throw new Error("No se pudieron cargar las alertas recientes.");
+  }
+
+  return data as Alert[];
 }
