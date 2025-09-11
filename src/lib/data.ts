@@ -1,7 +1,7 @@
 "use server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
-  Alert,
+  type AlertWithRelations,
   Kpis,
   type ClientWithStatus,
   type DeviceWithStatus,
@@ -65,10 +65,18 @@ export async function fetchDeviceDetails(
 ) {
   const { data, error } = await supabase
     .from("devices")
-    .select("*")
+    .select(
+      `
+            *,
+            clients ( name )
+        `
+    )
     .eq("id", deviceId)
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching device details:", error);
+    throw error;
+  }
   return data;
 }
 
@@ -240,7 +248,7 @@ export async function fetchSuperAdminKpis(
 // --- FUNCIÓN PARA OBTENER LAS ALERTAS MÁS RECIENTES ---
 export async function fetchRecentAlerts(
   supabase: SupabaseClient
-): Promise<Alert[]> {
+): Promise<AlertWithRelations[]> {
   const { data, error } = await supabase
     .from("alerts")
     // Pedimos todos los campos de la alerta y, usando joins,
@@ -262,5 +270,5 @@ export async function fetchRecentAlerts(
     throw new Error("No se pudieron cargar las alertas recientes.");
   }
 
-  return data as Alert[];
+  return data as AlertWithRelations[];
 }

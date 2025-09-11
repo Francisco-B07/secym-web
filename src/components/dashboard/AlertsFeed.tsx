@@ -1,4 +1,4 @@
-import { type Alert } from "@/lib/types";
+import { type AlertWithRelations } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -14,12 +14,6 @@ const alertTypeConfig: Record<string, string> = {
   TEMP_CRITICAL: "Temperatura Crítica",
   CURRENT_HIGH: "Corriente Elevada",
   OFFLINE: "Equipo Offline",
-};
-
-// Extender el tipo Alert para incluir los datos de las relaciones que ya estamos obteniendo
-type AlertWithRelations = Alert & {
-  clients: { name: string } | null;
-  devices: { location: string } | null;
 };
 
 export default function AlertsFeed({

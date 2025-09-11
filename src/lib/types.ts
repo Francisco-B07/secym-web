@@ -34,6 +34,7 @@ export interface Device {
   device_type?: "refrigerator" | "hvac";
   min_temp_threshold?: number | null;
   max_temp_threshold?: number | null;
+  clients: { name: string } | null;
 }
 
 export interface SensorReading {
@@ -114,3 +115,8 @@ export interface Kpis {
   critical_devices: number;
   offline_devices: number;
 }
+
+export type AlertWithRelations = Alert & {
+  clients: { name: string } | null;
+  devices: { location: string } | null;
+};

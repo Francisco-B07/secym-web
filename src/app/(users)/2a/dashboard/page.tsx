@@ -8,7 +8,12 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import type { ClientWithStatus, User, Alert, Kpis } from "@/lib/types";
+import type {
+  ClientWithStatus,
+  User,
+  Kpis,
+  AlertWithRelations,
+} from "@/lib/types";
 
 // Importa todos los componentes y acciones
 import UsersTable from "@/components/dashboard/UsersTable";
@@ -28,7 +33,7 @@ interface DashboardData {
   clients: ClientWithStatus[];
   users: User[];
   kpis: Kpis;
-  alerts: Alert[];
+  alerts: AlertWithRelations[];
 }
 
 const fetcher = (url: string) =>

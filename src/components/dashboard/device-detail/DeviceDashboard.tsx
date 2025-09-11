@@ -10,8 +10,12 @@ import DeviceSettings from "./DeviceSettings";
 import AmbientChart from "./AmbientChart";
 import Tabs from "@/components/dashboard/shared/Tabs";
 import { Switch } from "@headlessui/react";
+import Link from "next/link";
+import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 interface DeviceDashboardProps {
+  clientId: string;
+  clientName: string;
   device: Device & {
     sensor_config?: {
       probes?: { id: string; name: string; alerts_enabled: boolean }[];
@@ -32,6 +36,8 @@ interface DeviceDashboardProps {
 }
 
 export default function DeviceDashboard({
+  clientId,
+  clientName,
   device,
   initialReadings,
   hourlyCurrent,
@@ -228,10 +234,42 @@ export default function DeviceDashboard({
     });
   }
 
+  // --- LÓGICA PARA LA URL DEL CLIENTE ---
+  // Un super_admin o client_admin irá a la vista 'admin'. Un viewer a la vista 'viewer'.
+  const clientDashboardUrl = `/${clientId}/${
+    userRole === "client_viewer" ? "viewer" : "admin"
+  }/dashboard`;
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <header>
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol role="list" className="flex items-center space-x-2">
+              <li>
+                <div>
+                  <Link
+                    href={clientDashboardUrl}
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                  >
+                    {clientName}
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <ChevronRightIcon
+                    className="h-5 w-5 flex-shrink-0 text-gray-400"
+                    aria-hidden="true"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-500">
+                    {device.location}
+                  </span>
+                </div>
+              </li>
+            </ol>
+          </nav>
+
           <h1 className="text-3xl font-bold text-gray-900">
             {device.location}
           </h1>

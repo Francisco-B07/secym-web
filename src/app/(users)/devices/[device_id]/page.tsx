@@ -60,8 +60,14 @@ export default async function DeviceDetailPage({
   if (!device) {
     notFound();
   }
+
+  const clientId = device.client_id;
+  const clientName = device.clients?.name ?? "Cliente Desconocido";
+
   return (
     <DeviceDashboard
+      clientId={clientId}
+      clientName={clientName}
       initialReadings={readings}
       hourlyCurrent={hourlyCurrent}
       alerts={alerts}
