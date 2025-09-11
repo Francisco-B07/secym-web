@@ -35,55 +35,54 @@ export default function TemperatureChart({
   // `useMemo` optimiza el rendimiento, recalculando solo si los datos cambian.
   const processedSeries = useMemo(() => {
     const finalSeries: (ChartSeries & { type?: string })[] = [];
-
-    // Si no hay datos, no procesamos nada.
     if (!seriesData || seriesData.every((s) => s.data.length === 0)) {
       return [];
     }
-
     seriesData.forEach((series) => {
       const normalPoints: { x: number; y: number | null }[] = [];
       const anomalyPoints: { x: number; y: number | null }[] = [];
-
       series.data.forEach((point) => {
         if (
           point.y !== null &&
           (point.y < minThreshold || point.y > maxThreshold)
         ) {
           anomalyPoints.push(point);
+          normalPoints.push({ x: point.x, y: null }); // Crea un hueco en la línea normal
         } else {
           normalPoints.push(point);
         }
       });
-
-      // Añadimos la serie con los puntos normales
       finalSeries.push({
         ...series,
-        type: type === "line" ? "line" : "scatter",
         data: normalPoints,
       });
-
-      // Añadimos una serie separada solo para las anomalías
       if (anomalyPoints.length > 0) {
         finalSeries.push({
           name: `${series.name} (Anomalía)`,
-          type: "scatter", // Las anomalías siempre son puntos
           data: anomalyPoints,
         });
       }
     });
-
     return finalSeries;
-  }, [seriesData, minThreshold, maxThreshold, type]);
+  }, [seriesData, minThreshold, maxThreshold]);
 
   const chartColors = useMemo(() => {
-    const basePalette = ["#008FFB", "#00E396", "#FEB019", "#775DD0", "#A300D6"];
+    const basePalette = [
+      "#008FFB",
+      "#00E396",
+      "#FEB019",
+      "#775DD0",
+      "#A300D6",
+      "#f2c037",
+      "#d63384",
+      "#6f42c1",
+      "#fd7e14",
+    ];
     let colorIndex = 0;
     return processedSeries.map((series) => {
       if (series.name.includes("(Anomalía)")) {
         return "#FF4560"; // Rojo para todas las anomalías
       }
-      // Asignamos colores de la paleta a las series normales
       const color = basePalette[colorIndex % basePalette.length];
       colorIndex++;
       return color;
@@ -103,7 +102,6 @@ export default function TemperatureChart({
     dataLabels: { enabled: false },
     stroke: {
       curve: "smooth",
-      // El ancho de la línea depende del tipo de gráfico seleccionado
       width: processedSeries.map((s) =>
         s.name.includes("(Anomalía)") ? 0 : type === "line" ? 3 : 0
       ),
@@ -146,6 +144,7 @@ export default function TemperatureChart({
     },
     tooltip: {
       shared: true,
+      intersect: false,
       x: { format: "dd MMM yyyy, HH:mm" },
     },
     legend: {
