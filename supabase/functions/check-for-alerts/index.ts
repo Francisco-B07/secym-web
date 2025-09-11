@@ -75,18 +75,29 @@ serve(async (req: Request) => {
 
     // A. Alerta de Desconexión
     const offlineMinutes = device.offline_threshold_minutes;
-    if (
+    const isOffline =
       !lastReading ||
       new Date(lastReading.timestamp) <
-        new Date(now.getTime() - offlineMinutes * 60000)
-    ) {
+        new Date(now.getTime() - offlineMinutes * 60000);
+
+    if (isOffline) {
+      // Si el dispositivo está offline, creamos la alerta.
       await createAlertAndNotify(
         supabaseAdmin,
         device,
         "OFFLINE",
-        `El equipo no envía datos hace más de ${offlineMinutes} min.`
+        `El equipo no ha enviado datos en más de ${offlineMinutes} minutos.`
       );
+      // Saltamos al siguiente dispositivo, ya que no podemos verificar temperaturas.
       continue;
+    } else {
+      // Si el dispositivo está ONLINE, resolvemos cualquier alerta OFFLINE pendiente.
+      await supabaseAdmin
+        .from("alerts")
+        .update({ status: "resolved" })
+        .eq("device_id", device.id)
+        .eq("alert_type", "OFFLINE")
+        .eq("status", "new");
     }
 
     // B. Lógica de Temperatura para Heladeras
