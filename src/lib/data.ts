@@ -207,8 +207,18 @@ export async function fetchAlertsForDevice(
   supabase: SupabaseClient,
   deviceId: string
 ) {
-  // (Lógica para obtener alertas, por ahora devolvemos un array vacío)
-  return [];
+  const { data, error } = await supabase
+    .from("alerts")
+    .select("*") // Seleccionamos todos los campos de la alerta
+    .eq("device_id", deviceId) // Filtramos por el ID del dispositivo
+    .order("timestamp", { ascending: false }) // Mostramos las más recientes primero
+    .limit(50); // Limitamos a las últimas 50 para no sobrecargar la UI
+
+  if (error) {
+    console.error("Error fetching alerts for device:", error);
+    throw new Error("No se pudo cargar el historial de alertas.");
+  }
+  return data;
 }
 
 // --- FUNCIÓN PARA OBTENER LOS KPIS DEL SUPER ADMIN ---

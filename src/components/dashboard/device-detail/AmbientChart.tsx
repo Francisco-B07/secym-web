@@ -28,7 +28,12 @@ export default function AmbientChart({
   const options: ApexOptions = {
     chart: { height: 350, type: "line", animations: { enabled: false } },
     stroke: { width: [3, 3], curve: "smooth" },
-    xaxis: { type: "datetime" },
+    xaxis: {
+      type: "datetime",
+      labels: {
+        datetimeUTC: false,
+      },
+    },
     yaxis: [
       {
         seriesName: "Temperatura",

@@ -89,17 +89,17 @@ serve(async (req: Request) => {
       continue;
     }
 
-    // B. Alerta de Umbral Crítico
+    // B. Lógica de Temperatura para Heladeras
     if (
       device.device_type === "refrigerator" &&
       device.min_temp_threshold != null &&
       device.max_temp_threshold != null
     ) {
       const probeReadings: number[] = lastReading.probe_temperatures || [];
+      let isAnyProbeInAlert = false;
 
       probeReadings.forEach((temp, index) => {
         const probeKey = `probe_${index}`;
-
         const probeConfig = device.sensor_config?.probes?.find(
           (p: ProbeConfig) => p.id === probeKey
         );
@@ -109,6 +109,7 @@ serve(async (req: Request) => {
             temp < device.min_temp_threshold! ||
             temp > device.max_temp_threshold!
           ) {
+            isAnyProbeInAlert = true; // Marcamos que al menos una sonda está en alerta
             const probeName = probeConfig.name || `Sonda ${index + 1}`;
             createAlertAndNotify(
               supabaseAdmin,
@@ -121,11 +122,26 @@ serve(async (req: Request) => {
           }
         }
       });
+
+      // Si NINGUNA sonda con alertas habilitadas está fuera de rango...
+      if (!isAnyProbeInAlert) {
+        // ...llamamos a nuestra nueva función RPC para resolver las alertas de temperatura pendientes.
+        const { error: resolveError } = await supabaseAdmin.rpc(
+          "resolve_temp_alerts_for_device",
+          {
+            p_device_id: device.id,
+          }
+        );
+        if (resolveError) {
+          console.error(
+            `Error resolviendo alertas para el dispositivo ${device.id}:`,
+            resolveError
+          );
+        }
+      }
     }
   }
-
   return new Response(JSON.stringify({ message: "Alert check complete." }), {
-    headers: { "Content-Type": "application/json" },
     status: 200,
   });
 });

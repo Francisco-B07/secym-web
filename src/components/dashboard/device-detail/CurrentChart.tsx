@@ -25,7 +25,10 @@ export default function CurrentChart({
     plotOptions: { bar: { horizontal: false, columnWidth: "60%" } },
     dataLabels: { enabled: false },
     stroke: { show: true, width: 2, colors: ["transparent"] },
-    xaxis: { type: "datetime", labels: { format: "dd MMM HH:mm" } },
+    xaxis: {
+      type: "datetime",
+      labels: { datetimeUTC: false, format: "dd MMM HH:mm" },
+    },
     yaxis: {
       title: { text: "Amperes (A)" },
       labels: { formatter: (val) => val.toFixed(1) },

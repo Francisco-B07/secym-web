@@ -32,7 +32,7 @@ interface DashboardData {
 }
 
 const fetcher = (url: string) =>
-  fetch(url).then((res) => {
+  fetch(url, { cache: "no-store" }).then((res) => {
     if (!res.ok) {
       return res.json().then((body) => {
         const error = new Error(
